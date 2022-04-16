@@ -23,7 +23,7 @@
 /// QueueADT is a pointer to an abstract queue data structure whose
 /// payload data type is 'generic', implemented as void * in this interface.
 
-typedef struct { } * QueueADT;
+typedef struct queue_s *QueueADT;
 
 #endif
 
