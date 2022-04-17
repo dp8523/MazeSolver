@@ -82,7 +82,14 @@ bool is_solution(Node node, int num_rows, int num_cols)
 Node * solve_BFS(char **maze, int num_rows, int num_cols, int *steps)
 {
     QueueADT to_visit = que_create(NULL);
-    QueueADT visited = que_create(NULL);
+    Node visited[num_rows][num_cols];
+    for(int row = 0; row < num_rows; row++)
+    {
+        for(int col = 0; col < num_cols; col++)
+        {
+            visited[row][col] = NULL;
+        }
+    }
     const int MAX_NEIGHBORS = 4;
     int visited_count = 0;
 
@@ -93,7 +100,7 @@ Node * solve_BFS(char **maze, int num_rows, int num_cols, int *steps)
     while(!que_empty(to_visit))
     {
         current = (Node) que_remove(to_visit);
-        que_insert(visited, (void*) current);
+        visited[current->row][current->col] = current;
         visited_count++;
         if(is_solution(current, num_rows, num_cols))
         {
@@ -110,25 +117,14 @@ Node * solve_BFS(char **maze, int num_rows, int num_cols, int *steps)
                 free(neighbors[i]);
                 continue;
             }
-            bool already_passed = false;
-            for(int j = 0; j < visited_count; j++)
-            {
-                Node visited_node = (Node) que_remove(visited);
-                que_insert(visited, (void*) visited_node);
-                if(neighbors[i]->row == visited_node->row &&
-                    neighbors[i]->col == visited_node->col)
-                {
-                    already_passed = true;
-                    break;
-                }
-            }
-            if(already_passed)
+            if(visited[neighbors[i]->row][neighbors[i]->col] != NULL)
             {
                 continue;
             }
             que_insert(to_visit, (void*) neighbors[i]);
         }
     }
+    que_destroy(to_visit);
     if(!(current->row == num_rows - 1 && current->col == num_cols - 1))
     {
         return NULL;
@@ -162,18 +158,10 @@ Node * solve_BFS(char **maze, int num_rows, int num_cols, int *steps)
                 prev_row = current->row;
                 prev_col = current->col - 1;
             }
-            for(int i = 0; i < visited_count; i++)
-            {
-                Node visited_node = (Node) que_remove(visited);
-                que_insert(visited, (void*) visited_node);
-                if(visited_node->row == prev_row &&
-                    visited_node->col == prev_col)
-                {
-                    current = visited_node;
-                    path[*steps] = current;
-                    (*steps)++;
-                }
-            }
+            
+            current = visited[prev_row][prev_col];
+            path[*steps] = current;
+            (*steps)++;
         }
         return path;
     }
@@ -269,6 +257,29 @@ void print_maze(char** maze, int num_rows, int num_cols)
     printf("|\n");
 }
 
+void usage(FILE *output)
+{
+    fprintf(output, "Usage:\nmopsolver [-hdsp] [-i INFILE] [-o OUTFILE]\n");
+}
+
+void help(FILE *output)
+{
+    usage(output);
+    fprintf(output, "Options:\n");
+    fprintf(output, "  -h          Print usage and options list to stdout ");
+    fprintf(output, "only.    (Default: off)\n");
+    fprintf(output, "  -d          Pretty-print (display) the maze after ");
+    fprintf(output, "reading.  (Default: off)\n");
+    fprintf(output, "  -s          Print length of shortest path or 'No ");
+    fprintf(output, "solution'. (Default: off)\n");
+    fprintf(output, "  -p          Pretty-print maze with the path, if one ");
+    fprintf(output, "exists. (Default: off)\n");
+    fprintf(output, "  -i infile   Read maze from infile.");
+    fprintf(output, "                          (Default: stdin)\n");
+    fprintf(output, "  -o outfile  Write all output to outfile.");
+    fprintf(output, "                    (Default: stdout)\n");
+}
+
 int main(int argc, char *argv[])
 {
     (void) argc;
@@ -276,6 +287,20 @@ int main(int argc, char *argv[])
     int num_rows = 0; 
     int num_cols = 0;
     char **maze = make_maze(filename, &num_rows, &num_cols);
+/*
+    int opt;
+    while((opt = getopt(argc, argv, "hdspi:o:")) != -1)
+    {
+        switch(opt)
+        {
+        case 'h':
+            help();
+            return EXIT_FAILURE;
+            break;
+        }
+    }
+*/
+    help(stdout);
     print_maze(maze, num_rows, num_cols);
     int steps = 0;
     Node *path = solve_BFS(maze, num_rows, num_cols, &steps);
