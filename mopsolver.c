@@ -15,16 +15,24 @@
 
 #include "QueueADT.h"
 
-/// groups coordinate pairs for a cell
+/// groups coordinate pairs, and contains symbol for the direction the previous
+/// node was from for backtracing.
 
 struct node_s
 {
-    int row;
-    int col;
-    char from;
+    int row; ///< row coordinate
+    int col; ///< column coordinate
+    char from; ///< cardinal direction of previous node
 };
 
 typedef struct node_s *Node;
+
+/// Creates a node
+///
+/// @param row the row coordinate
+/// @param col the column coordinate
+/// @param from the cardinal direction of the previous node
+/// @return the Node instance
 
 Node make_node(int row, int col, char from)
 {
@@ -35,6 +43,11 @@ Node make_node(int row, int col, char from)
     return node;
 }
 
+/// Generates the specified Node's neighbors
+///
+/// @param current the Node whose neighbors are being made
+/// @param neighbors an array to be filled with this Node's neighbors
+
 void get_neighbors(Node current, Node neighbors[])
 {
     neighbors[0] = make_node(current->row - 1, current->col, 's');
@@ -42,6 +55,13 @@ void get_neighbors(Node current, Node neighbors[])
     neighbors[2] = make_node(current->row, current->col + 1, 'w');
     neighbors[3] = make_node(current->row, current->col - 1, 'e');
 }
+
+/// Whether the given Node's coordinates are on the maze
+///
+/// @param node the Node whose coordinates are tested
+/// @param num_rows the number of rows in the maze
+/// @param num_cols the number of columns in the maze
+/// @return true if the coordinates are on the maze, false otherwise
 
 bool valid_cords(Node node, int num_rows, int num_cols)
 {
@@ -56,6 +76,12 @@ bool valid_cords(Node node, int num_rows, int num_cols)
     return true;
 }
 
+/// Whether the given Node is a wall
+///
+/// @param node the Node being tested
+/// @param maze the maze the Node is in
+/// @return true if the Node is a wall, false if otherwise
+
 bool is_wall(Node node, char** maze)
 {
     if(maze[node->row][node->col] == '#')
@@ -68,6 +94,13 @@ bool is_wall(Node node, char** maze)
     }
 }
 
+/// Whether the given Node is at the exit
+///
+/// @param node the Node being tested
+/// @param num_rows the number of rows in the maze
+/// @param num_cols the number of columns in the maze
+/// @return true if the Node is at the exit, false if otherwise
+
 bool is_solution(Node node, int num_rows, int num_cols)
 {
     if(node->row == num_rows - 1 && node->col == num_cols - 1)
@@ -79,6 +112,14 @@ bool is_solution(Node node, int num_rows, int num_cols)
         return false;
     }
 }
+
+/// Solves the given maze with the shortest path using breadth first search
+///
+/// @param maze the given maze to solve
+/// @param num_rows the number of rows in the maze
+/// @param num_cols the number of columns in the maze
+/// @param steps the given pointer is incremented to return the number of steps
+/// @return the path of Nodes to the solution
 
 Node * solve_BFS(char **maze, int num_rows, int num_cols, int *steps)
 {
@@ -168,6 +209,13 @@ Node * solve_BFS(char **maze, int num_rows, int num_cols, int *steps)
     }
 }
 
+/// Generates the maze according to the binary input
+///
+/// @param filename the name of the input file, or NULL if stdin is used
+/// @param num_rows the pointer is incremented to return the number of rows
+/// @param num_cols the pointer is incremented to return the number of cols
+/// @return the char array representing the maze
+
 char ** make_maze(char *filename, int *num_rows, int *num_cols)
 {
     FILE *infile;
@@ -227,6 +275,13 @@ char ** make_maze(char *filename, int *num_rows, int *num_cols)
     return maze;
 }
 
+/// Prints the current state of the maze to the desired output
+///
+/// @param maze the maze to be printed
+/// @param num_rows the number of rows in the maze
+/// @param num_cols the number of columns in the maze
+/// @param output the file to print to
+
 void print_maze(char** maze, int num_rows, int num_cols, FILE *output)
 {
     fprintf(output, "|");
@@ -266,10 +321,18 @@ void print_maze(char** maze, int num_rows, int num_cols, FILE *output)
     fprintf(output, "|\n");
 }
 
+/// Prints the usage message to the desired output
+///
+/// @param output the file pointer of the desired output
+
 void usage(FILE *output)
 {
     fprintf(output, "Usage:\nmopsolver [-hdsp] [-i INFILE] [-o OUTFILE]\n");
 }
+
+/// Prints the usage message and instructions the desired output
+///
+/// @param output the file pointer of the desired output
 
 void help(FILE *output)
 {
@@ -288,6 +351,13 @@ void help(FILE *output)
     fprintf(output, "  -o outfile  Write all output to outfile.");
     fprintf(output, "                    (Default: stdout)\n");
 }
+
+/// Processes arguments and flags to set the input and output preferences
+/// before running the solver
+///
+/// @param argc the number of arguments
+/// @param argv the array of arguments
+/// @return whether the program executed successfully
 
 int main(int argc, char *argv[])
 {
