@@ -11,6 +11,7 @@
 #define _DEFAULT_SOURCE
 #include <stdlib.h>
 #include <stdio.h>
+#include <getopt.h>
 
 #include "QueueADT.h"
 
@@ -169,7 +170,15 @@ Node * solve_BFS(char **maze, int num_rows, int num_cols, int *steps)
 
 char ** make_maze(char *filename, int *num_rows, int *num_cols)
 {
-    FILE *infile = fopen(filename, "r");
+    FILE *infile;
+    if(filename == NULL)
+    {
+        infile = stdin;
+    }
+    else
+    {
+        infile = fopen(filename, "r");
+    }
     char *line = NULL;
     size_t size = 0;
     QueueADT all_elements = que_create(NULL); // queue grows as elements are read
@@ -218,43 +227,43 @@ char ** make_maze(char *filename, int *num_rows, int *num_cols)
     return maze;
 }
 
-void print_maze(char** maze, int num_rows, int num_cols)
+void print_maze(char** maze, int num_rows, int num_cols, FILE *output)
 {
-    printf("|");
+    fprintf(output, "|");
     for(int i = 0; i < (num_cols * 2) + 1; i++)
     {
-        printf("-");
+        fprintf(output, "-");
     }
-    printf("|\n");
+    fprintf(output, "|\n");
     for(int row = 0; row < num_rows; row++)
     {
         if(row == 0)
         {
-            printf("  ");
+            fprintf(output, "  ");
         }
         else
         {
-            printf("| ");
+            fprintf(output, "| ");
         }
         for(int col = 0; col < num_cols; col++)
         {
-            printf("%c ", maze[row][col]);
+            fprintf(output, "%c ", maze[row][col]);
         }
         if(row == num_rows - 1)
         {
-            printf(" \n");
+            fprintf(output, " \n");
         }
         else
         {
-            printf("|\n");
+            fprintf(output, "|\n");
         }
     }
-    printf("|");
+    fprintf(output, "|");
     for(int i = 0; i < (num_cols * 2) + 1; i++)
     {
-        printf("-");
+        fprintf(output, "-");
     }
-    printf("|\n");
+    fprintf(output, "|\n");
 }
 
 void usage(FILE *output)
@@ -282,42 +291,76 @@ void help(FILE *output)
 
 int main(int argc, char *argv[])
 {
-    (void) argc;
-    char *filename = argv[1];
+    char *filename = NULL;
+    FILE *output = stdout;
     int num_rows = 0; 
     int num_cols = 0;
-    char **maze = make_maze(filename, &num_rows, &num_cols);
-/*
+    int steps = 0;
+    bool init_print = false;
+    bool print_steps = false;
+    bool final_print = false;
+
     int opt;
     while((opt = getopt(argc, argv, "hdspi:o:")) != -1)
     {
         switch(opt)
         {
         case 'h':
-            help();
+            help(stdout);
             return EXIT_FAILURE;
             break;
+        case 'i':
+            filename = optarg;
+            break;
+        case 'o':
+            output = fopen(optarg, "w");
+            break;
+        case 'd':
+            init_print = true;
+            break;
+        case 's':
+            print_steps = true;
+            break;
+        case 'p':
+            final_print = true;
+            break;
+        default:
+            usage(stderr);
+            return EXIT_FAILURE;
         }
     }
-*/
-    help(stdout);
-    print_maze(maze, num_rows, num_cols);
-    int steps = 0;
+
+    char **maze = make_maze(filename, &num_rows, &num_cols);
+    if(init_print)
+    {
+        print_maze(maze, num_rows, num_cols, output);
+    }
+    
     Node *path = solve_BFS(maze, num_rows, num_cols, &steps);
 
-    if(path == NULL)
+    if(print_steps)
     {
-        printf("No solution");
-    }
-    else
-    {
-        printf("%d\n", steps);
-        for(int i = 0; i < steps; i++)
+        if(path == NULL)
         {
-            maze[path[i]->row][path[i]->col] = '+';
+            fprintf(output, "No solution\n");
+        }
+        else
+        {
+            fprintf(output, "Solution in %d steps.\n", steps);
         }
     }
-    print_maze(maze, num_rows, num_cols);
+
+    if(final_print)
+    {
+        if(path != NULL)
+        {
+            for(int i = 0; i < steps; i++)
+            {
+                maze[path[i]->row][path[i]->col] = '+';
+            }
+        }
+        print_maze(maze, num_rows, num_cols, output);
+    }
 
     for(int i = 0; i < num_rows; i++)
     {
